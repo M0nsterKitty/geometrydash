@@ -341,9 +341,9 @@
 
         zeminY = Math.floor(ekran.h * 0.78);
         oyuncu.xEkran = Math.floor(ekran.w * 0.22);
+        seviyeKur();
         if (oyunDurumu !== "oynaniyor") {
-          oyuncu.y = zeminY - OYUNCU_BOYUT;
-          oyuncu.oncekiY = oyuncu.y;
+          oyuncuyuYereYerlestir(0);
         }
       }
 
@@ -382,6 +382,28 @@
         }
       }
 
+      function yerSeviyesiBul(dunyaX) {
+        const kutuSol = dunyaX - OYUNCU_BOYUT / 2;
+        const kutuSag = kutuSol + OYUNCU_BOYUT;
+        let enYuksekYuzey = Infinity;
+
+        for (const p of seviye.platformlar) {
+          const yatayTemas = kutuSag > p.x && kutuSol < p.x + p.w;
+          if (!yatayTemas) continue;
+          enYuksekYuzey = Math.min(enYuksekYuzey, p.y - OYUNCU_BOYUT);
+        }
+
+        return enYuksekYuzey !== Infinity ? enYuksekYuzey : zeminY - OYUNCU_BOYUT;
+      }
+
+      function oyuncuyuYereYerlestir(dunyaX = uzaklik) {
+        oyuncu.y = yerSeviyesiBul(dunyaX);
+        oyuncu.oncekiY = oyuncu.y;
+        oyuncu.vy = 0;
+        oyuncu.yerde = true;
+        oyuncu.sonYerdeZaman = performance.now();
+      }
+
       function hizSec() {
         for (const bolum of BOLUMLER) {
           if (uzaklik < bolum.bitis) return bolum.hiz;
@@ -395,11 +417,7 @@
         skor = 0;
         skorZamanSayaci = 0;
         sonrakiMesafeSkoru = SKOR_MESAFE_ADIMI;
-        oyuncu.vy = 0;
-        oyuncu.y = zeminY - OYUNCU_BOYUT;
-        oyuncu.oncekiY = oyuncu.y;
-        oyuncu.yerde = true;
-        oyuncu.sonYerdeZaman = performance.now();
+        oyuncuyuYereYerlestir(uzaklik);
         oyuncu.donus = 0;
         panel.classList.add("oyunda");
         oyunDurumu = "oynaniyor";
@@ -660,7 +678,6 @@
       window.addEventListener("orientationchange", yenidenBoyutla);
 
       // ---------- Başlat ----------
-      seviyeKur();
       yenidenBoyutla();
       panelRekor.textContent = Math.floor(rekor);
       skorGuncelle();
