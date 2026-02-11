@@ -237,18 +237,21 @@
 
       // ---------- Oyun sabitleri ----------
       const YERDEN_DUSME_PAYI = 120;
-      const YERCEKIMI = 2500;
-      const ZIPLAMA_HIZI = -900;
+      const YERCEKIMI = 2150;
+      const ZIPLAMA_HIZI = -860;
       const OYUNCU_BOYUT = 42;
       const KOYOTE_MS = 90;
       const EN_YUKSEK_DT = 1 / 35;
       const REKOR_ANAHTAR = "tahta-dash-rekor";
+      const SKOR_ARALIK_MS = 300;
+      const SKOR_ZAMAN_ARTISI = 2;
+      const SKOR_MESAFE_ADIMI = 190;
+      const SKOR_MESAFE_ARTISI = 3;
       const BOLUMLER = [
-        { bitis: 1200, hiz: 330 },
-        { bitis: 2800, hiz: 365 },
-        { bitis: 4700, hiz: 400 },
-        { bitis: 6800, hiz: 435 },
-        { bitis: Infinity, hiz: 470 }
+        { bitis: 1400, hiz: 285 },
+        { bitis: 3200, hiz: 305 },
+        { bitis: 5600, hiz: 325 },
+        { bitis: Infinity, hiz: 345 }
       ];
 
       // ---------- Durum ----------
@@ -261,6 +264,8 @@
       let uzaklik = 0;
       let sure = 0;
       let skor = 0;
+      let skorZamanSayaci = 0;
+      let sonrakiMesafeSkoru = SKOR_MESAFE_ADIMI;
       let rekor = Number(localStorage.getItem(REKOR_ANAHTAR) || 0);
 
       const oyuncu = {
@@ -275,8 +280,7 @@
 
       const seviye = {
         platformlar: [],
-        dikenler: [],
-        hareketliler: []
+        dikenler: []
       };
 
       // ---------- Ses: düşük gecikmeli basit sentez ----------
@@ -351,59 +355,46 @@
         seviye.dikenler.push({ x, y: tabanY - h, w, h });
       }
 
-      function hareketliEkle({ x, y, w, h, eksen, menzil, hiz, faz = 0, olumcul = true }) {
-        seviye.hareketliler.push({ x, y, w, h, eksen, menzil, hiz, faz, olumcul });
-      }
-
       function seviyeKur() {
         seviye.platformlar.length = 0;
         seviye.dikenler.length = 0;
-        seviye.hareketliler.length = 0;
 
-        // Ana zemin segmentleri + boşluklar
+        // Sürekli zemin + küçük, kolay boşluklar
         const segmentler = [
-          [0, 420], [500, 360], [960, 260], [1300, 400], [1760, 310], [2140, 420],
-          [2650, 280], [3000, 360], [3460, 300], [3850, 240], [4160, 320], [4550, 290],
-          [4920, 230], [5220, 260], [5570, 260], [5950, 230], [6260, 250], [6610, 400]
+          [0, 1180],
+          [1260, 1120],
+          [2470, 1260],
+          [3810, 1080],
+          [4970, 1210],
+          [6270, 1260],
+          [7610, 900]
         ];
-        for (const [x, w] of segmentler) platformEkle(x, zeminY, w, 30);
+        for (const [x, w] of segmentler) platformEkle(x, zeminY, w, 34);
 
-        // Yükseltiler (zıplama ritmi için)
-        platformEkle(930, zeminY - 95, 110, 24);
-        platformEkle(2050, zeminY - 110, 125, 24);
-        platformEkle(3370, zeminY - 90, 115, 24);
-        platformEkle(4870, zeminY - 120, 120, 24);
-        platformEkle(6120, zeminY - 80, 110, 24);
+        // Kolay, net görünen diken düzeni
+        const tekDikenler = [520, 860, 1520, 1980, 2860, 4200, 5480, 6820, 7740];
+        for (const x of tekDikenler) dikenEkle(x, zeminY, 34, 36);
 
-        // Dikenler
-        const dikenPozisyonlari = [
-          310, 355, 780, 1110, 1160, 1690, 2190, 2240, 2740, 3040, 3525, 3570,
-          4220, 4600, 5280, 5340, 5670, 6020, 6500, 6540
-        ];
-        for (const x of dikenPozisyonlari) dikenEkle(x, zeminY, 30, 34);
-
-        // Platform üstü dikenler
-        dikenEkle(2065, zeminY - 110, 28, 30);
-        dikenEkle(4895, zeminY - 120, 28, 30);
-
-        // Hareketli engeller
-        hareketliEkle({ x: 1480, y: zeminY - 70, w: 36, h: 36, eksen: "y", menzil: 84, hiz: 1.8 });
-        hareketliEkle({ x: 2920, y: zeminY - 55, w: 42, h: 42, eksen: "x", menzil: 110, hiz: 1.6, faz: 0.4 });
-        hareketliEkle({ x: 4380, y: zeminY - 75, w: 40, h: 40, eksen: "y", menzil: 95, hiz: 2.1, faz: 0.8 });
-        hareketliEkle({ x: 5820, y: zeminY - 62, w: 42, h: 42, eksen: "x", menzil: 120, hiz: 1.9, faz: 1.3 });
+        const grupBaslangiclari = [3360, 4680, 6120, 7310];
+        for (const baslangic of grupBaslangiclari) {
+          dikenEkle(baslangic, zeminY, 32, 34);
+          dikenEkle(baslangic + 38, zeminY, 32, 34);
+        }
       }
 
       function hizSec() {
         for (const bolum of BOLUMLER) {
           if (uzaklik < bolum.bitis) return bolum.hiz;
         }
-        return 470;
+        return 345;
       }
 
       function oyunSifirla() {
         uzaklik = 0;
         sure = 0;
         skor = 0;
+        skorZamanSayaci = 0;
+        sonrakiMesafeSkoru = SKOR_MESAFE_ADIMI;
         oyuncu.vy = 0;
         oyuncu.y = zeminY - OYUNCU_BOYUT;
         oyuncu.oncekiY = oyuncu.y;
@@ -450,14 +441,7 @@
         return x - uzaklik + oyuncu.xEkran;
       }
 
-      function hareketliKonum(engel, zamanSn) {
-        const sin = Math.sin(zamanSn * engel.hiz + engel.faz);
-        const dx = engel.eksen === "x" ? sin * engel.menzil : 0;
-        const dy = engel.eksen === "y" ? sin * engel.menzil : 0;
-        return { x: engel.x + dx, y: engel.y + dy, w: engel.w, h: engel.h };
-      }
-
-      function fizikGuncelle(dt, zamanSn) {
+      function fizikGuncelle(dt) {
         const hiz = hizSec();
         uzaklik += hiz * dt;
         sure += dt;
@@ -472,7 +456,8 @@
         const oyuncuDunyaX = uzaklik;
         const kutu = { x: oyuncuDunyaX - OYUNCU_BOYUT / 2, y: oyuncu.y, w: OYUNCU_BOYUT, h: OYUNCU_BOYUT };
 
-        // Platform çarpışması: yukarıdan inişte oturma
+        // Platform çarpışması: yukarıdan inişte en yakın zemine otur.
+        let inisY = Infinity;
         for (const p of seviye.platformlar) {
           const yatayTemas = kutu.x + kutu.w > p.x && kutu.x < p.x + p.w;
           if (!yatayTemas) continue;
@@ -480,11 +465,15 @@
           const onceAlt = oyuncu.oncekiY + OYUNCU_BOYUT;
           const simdiAlt = oyuncu.y + OYUNCU_BOYUT;
           if (onceAlt <= p.y && simdiAlt >= p.y && oyuncu.vy >= 0) {
-            oyuncu.y = p.y - OYUNCU_BOYUT;
-            oyuncu.vy = 0;
-            oyuncu.yerde = true;
-            oyuncu.sonYerdeZaman = performance.now();
+            inisY = Math.min(inisY, p.y - OYUNCU_BOYUT);
           }
+        }
+
+        if (inisY !== Infinity) {
+          oyuncu.y = inisY;
+          oyuncu.vy = 0;
+          oyuncu.yerde = true;
+          oyuncu.sonYerdeZaman = performance.now();
         }
 
         // Düşme kontrolü
@@ -501,15 +490,16 @@
           }
         }
 
-        for (const m of seviye.hareketliler) {
-          const anlik = hareketliKonum(m, zamanSn);
-          if (m.olumcul && ortusuyorMu(kutu, anlik)) {
-            oyunBitir();
-            return;
-          }
+        skorZamanSayaci += dt * 1000;
+        while (skorZamanSayaci >= SKOR_ARALIK_MS) {
+          skorZamanSayaci -= SKOR_ARALIK_MS;
+          skor += SKOR_ZAMAN_ARTISI;
         }
 
-        skor = uzaklik * 0.34 + sure * 22;
+        while (uzaklik >= sonrakiMesafeSkoru) {
+          skor += SKOR_MESAFE_ARTISI;
+          sonrakiMesafeSkoru += SKOR_MESAFE_ADIMI;
+        }
       }
 
       function cizArkaPlan() {
@@ -535,7 +525,7 @@
         }
       }
 
-      function cizSeviye(zamanSn) {
+      function cizSeviye() {
         // Platformlar
         ctx.fillStyle = "#284e8d";
         ctx.strokeStyle = "#71dcff";
@@ -561,16 +551,6 @@
           ctx.fill();
         }
 
-        // Hareketli engeller
-        for (const m of seviye.hareketliler) {
-          const anlik = hareketliKonum(m, zamanSn);
-          const sx = worldXtoScreen(anlik.x);
-          if (sx + anlik.w < -80 || sx > ekran.w + 80) continue;
-          ctx.fillStyle = "#ffc146";
-          ctx.fillRect(sx, anlik.y, anlik.w, anlik.h);
-          ctx.strokeStyle = "#ffec8e";
-          ctx.strokeRect(sx + 0.5, anlik.y + 0.5, anlik.w - 1, anlik.h - 1);
-        }
       }
 
       function cizOyuncu() {
@@ -599,10 +579,10 @@
 
         cizArkaPlan();
         if (oyunDurumu === "oynaniyor") {
-          fizikGuncelle(dt, simdi / 1000);
+          fizikGuncelle(dt);
           skorGuncelle();
         }
-        cizSeviye(simdi / 1000);
+        cizSeviye();
         cizOyuncu();
 
         requestAnimationFrame(dongu);
