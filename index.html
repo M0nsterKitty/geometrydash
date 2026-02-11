@@ -237,8 +237,8 @@
 
       // ---------- Oyun sabitleri ----------
       const YERDEN_DUSME_PAYI = 120;
-      const YERCEKIMI = 2150;
-      const ZIPLAMA_HIZI = -860;
+      const YERCEKIMI = 2280;
+      const ZIPLAMA_HIZI = -900;
       const OYUNCU_BOYUT = 42;
       const KOYOTE_MS = 90;
       const EN_YUKSEK_DT = 1 / 35;
@@ -248,10 +248,11 @@
       const SKOR_MESAFE_ADIMI = 190;
       const SKOR_MESAFE_ARTISI = 3;
       const BOLUMLER = [
-        { bitis: 1400, hiz: 285 },
-        { bitis: 3200, hiz: 305 },
-        { bitis: 5600, hiz: 325 },
-        { bitis: Infinity, hiz: 345 }
+        { bitis: 2200, hiz: 272 },
+        { bitis: 5200, hiz: 285 },
+        { bitis: 9000, hiz: 298 },
+        { bitis: 14000, hiz: 311 },
+        { bitis: Infinity, hiz: 322 }
       ];
 
       // ---------- Durum ----------
@@ -359,26 +360,63 @@
         seviye.platformlar.length = 0;
         seviye.dikenler.length = 0;
 
-        // Sürekli zemin + küçük, kolay boşluklar
-        const segmentler = [
-          [0, 1180],
-          [1260, 1120],
-          [2470, 1260],
-          [3810, 1080],
-          [4970, 1210],
-          [6270, 1260],
-          [7610, 900]
-        ];
-        for (const [x, w] of segmentler) platformEkle(x, zeminY, w, 34);
+        const toplamUzunluk = 20500;
+        const guvenliBaslangic = 720;
+        let x = 0;
+        let boslukSayaci = 0;
 
-        // Kolay, net görünen diken düzeni
-        const tekDikenler = [520, 860, 1520, 1980, 2860, 4200, 5480, 6820, 7740];
-        for (const x of tekDikenler) dikenEkle(x, zeminY, 34, 36);
+        while (x < toplamUzunluk) {
+          const oran = kisit(x / toplamUzunluk, 0, 1);
+          const segmentMin = 760 - oran * 200;
+          const segmentMax = 1180 - oran * 220;
+          const segmentUzunlugu = Math.round(segmentMin + Math.random() * (segmentMax - segmentMin));
+          const segmentBaslangic = x;
+          const segmentBitis = segmentBaslangic + segmentUzunlugu;
+          platformEkle(segmentBaslangic, zeminY, segmentUzunlugu, 34);
 
-        const grupBaslangiclari = [3360, 4680, 6120, 7310];
-        for (const baslangic of grupBaslangiclari) {
-          dikenEkle(baslangic, zeminY, 32, 34);
-          dikenEkle(baslangic + 38, zeminY, 32, 34);
+          // İlk bölüm sakin: engeller seyrek ve tekli.
+          const guvenliKenar = 180;
+          let engelX = segmentBaslangic + guvenliBaslangic + guvenliKenar;
+          if (oran > 0.12) {
+            const engelAralik = 360 - oran * 130;
+            const minAralik = Math.max(205, engelAralik);
+            while (engelX < segmentBitis - 140) {
+              const zorluk = kisit((oran - 0.1) / 0.9, 0, 1);
+              const grupSans = 0.15 + zorluk * 0.55;
+              const grupMu = Math.random() < grupSans;
+              const grupBoyutu = grupMu ? (Math.random() < 0.5 + zorluk * 0.35 ? 2 : 3) : 1;
+              const dikenGenislik = 33 - zorluk * 3;
+              const dikenYukseklik = 35 + zorluk * 3;
+              const aralik = 40 - zorluk * 8;
+
+              for (let i = 0; i < grupBoyutu; i += 1) {
+                const tekX = engelX + i * aralik;
+                if (tekX + 34 < segmentBitis - 110) {
+                  dikenEkle(tekX, zeminY, dikenGenislik, dikenYukseklik);
+                }
+              }
+
+              engelX += minAralik + Math.random() * 90;
+            }
+          }
+
+          x = segmentBitis;
+          if (x >= toplamUzunluk) break;
+
+          // Boşluklar zamanla sıklaşıp hafifçe daralır; ilk başta uzun ve rahat.
+          const erkenDonem = oran < 0.18;
+          const boslukTaban = erkenDonem ? 140 : 120;
+          const boslukDaralma = oran * 48;
+          const boslukGenisligi = Math.round(boslukTaban - boslukDaralma + Math.random() * 18);
+          x += boslukGenisligi;
+          boslukSayaci += 1;
+
+          // Ardışık zorlu boşlukları engelle: akıcılık için ara güvenli bölüm.
+          if (boslukSayaci % 4 === 0) {
+            const nefesMesafesi = Math.round(110 + (1 - oran) * 120);
+            platformEkle(x, zeminY, nefesMesafesi, 34);
+            x += nefesMesafesi;
+          }
         }
       }
 
@@ -408,7 +446,7 @@
         for (const bolum of BOLUMLER) {
           if (uzaklik < bolum.bitis) return bolum.hiz;
         }
-        return 345;
+        return 322;
       }
 
       function oyunSifirla() {
