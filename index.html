@@ -194,10 +194,11 @@
       // ---------- Fizik / oyun ayarları ----------
       const OYUNCU_BOYUT = 42;
       const YERDEN_DUSME_PAYI = 140;
-      const GRAVITE = 2620; // Temel platformerlardan ~%11 daha güçlü his
-      const ZIPLAMA_DARBESI = -940;
+      const GRAVITE = 2700; // Daha hızlı akışa uyum için hafif artırıldı.
+      const ZIPLAMA_DARBESI = -968;
       const DT_TAVAN = 1 / 35;
-      const ZIPLAMA_BUFFER_MS = 115;
+      const ZIPLAMA_BUFFER_MS = 125;
+      const HIZ_CARPANI = 1.06;
       const SKOR_ARALIK_MS = 120;
       const SKOR_BASINA_ARTIS = 4;
       const BITIS_SKORU = 5000;
@@ -249,8 +250,9 @@
       }
 
       function hizHesapla() {
-        // Hız da skorla artar: başlangıçta ritmik, sonda daha sıkı.
-        return 320 + kisit(skor / BITIS_SKORU, 0, 1) * 80;
+        // Kademeli akış korunur; toplam tempo ~%6 daha enerjik.
+        const temelHiz = 320 + kisit(skor / BITIS_SKORU, 0, 1) * 80;
+        return temelHiz * HIZ_CARPANI;
       }
 
       function patternEkle(x, zorluk) {
