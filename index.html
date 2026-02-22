@@ -1,588 +1,612 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Tahta Dash</title>
+  <title>Neon Rhythm Dash</title>
   <style>
-    :root {
-      color-scheme: dark;
-      --arkaplan: #080d18;
-      --panel: rgba(0, 0, 0, 0.56);
-      --vurgu: #70efff;
-      --zemin: #2a4f8f;
-      --yazi: #f5f7ff;
-    }
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: Inter, Segoe UI, Arial, sans-serif; background: #070b18; }
+    body { background: radial-gradient(circle at 20% 10%, #16284b 0%, #090f1e 45%, #060912 100%); }
+    canvas { width: 100%; height: 100%; display: block; touch-action: none; }
 
-    * {
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
+    .hud { position: fixed; top: max(10px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 8; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .pill { background: rgba(8, 14, 32, 0.78); border: 1px solid rgba(120, 230, 255, 0.5); border-radius: 999px; padding: 8px 14px; min-width: 110px; text-align: center; font-weight: 700; color: #d8f8ff; box-shadow: 0 0 12px rgba(70, 180, 255, 0.25); }
 
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
-      font-family: "Segoe UI", Arial, sans-serif;
-      color: var(--yazi);
-      background: radial-gradient(circle at 22% 18%, #1a2b4f, var(--arkaplan) 56%);
-      touch-action: manipulation;
-    }
+    .menu { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(3px); }
+    .menu.hidden { display: none; }
+    .card { width: min(90vw, 560px); border-radius: 14px; padding: clamp(16px, 3vw, 28px); background: rgba(6, 10, 24, 0.94); border: 1px solid rgba(117, 226, 255, 0.6); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); text-align: center; }
+    h1 { margin: 6px 0 10px; color: #8df2ff; letter-spacing: 0.04em; }
+    p { margin: 8px 0; color: #d4ecff; opacity: 0.96; }
+    .btn { margin-top: 14px; border: 1px solid #89e8ff; background: linear-gradient(180deg, #1d4f7a, #0f2941); color: white; padding: 11px 18px; border-radius: 10px; cursor: pointer; font-weight: 700; width: min(260px, 80%); }
+    .controls { margin-top: 10px; font-size: 0.92rem; opacity: 0.9; }
 
-    #oyun {
-      width: 100%;
-      height: 100%;
-      display: block;
-      touch-action: none;
-      cursor: pointer;
-    }
-
-    #ustBilgi {
-      position: fixed;
-      left: 50%;
-      top: 1rem;
-      transform: translateX(-50%);
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.65rem;
-      z-index: 5;
-      pointer-events: none;
-    }
-
-    .rozet {
-      min-width: 8.4rem;
-      text-align: center;
-      padding: 0.5rem 0.95rem;
-      border-radius: 999px;
-      border: 2px solid rgba(255, 255, 255, 0.24);
-      background: var(--panel);
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      font-size: clamp(0.95rem, 1.9vw, 1.2rem);
-    }
-
-    #ziplamaAlani {
-      position: fixed;
-      left: 1rem;
-      right: 1rem;
-      bottom: max(1rem, env(safe-area-inset-bottom));
-      min-height: 5rem;
-      z-index: 4;
-      border-radius: 1rem;
-      border: 2px dashed rgba(255, 255, 255, 0.3);
-      background: rgba(0, 0, 0, 0.34);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: clamp(1rem, 2.4vw, 1.35rem);
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      touch-action: manipulation;
-    }
-
-    #panel {
-      position: fixed;
-      inset: 0;
-      z-index: 7;
-      display: grid;
-      place-items: center;
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(2px);
-    }
-
-    #panel.oyunda {
-      display: none;
-    }
-
-    .kart {
-      width: min(92vw, 620px);
-      border-radius: 1rem;
-      padding: clamp(1rem, 3vw, 1.5rem);
-      border: 2px solid rgba(112, 239, 255, 0.6);
-      background: rgba(7, 13, 26, 0.93);
-      text-align: center;
-    }
-
-    .kart h1 {
-      margin: 0.1rem 0 0.7rem;
-      font-size: clamp(1.4rem, 4.5vw, 2.3rem);
-    }
-
-    .kart p {
-      margin: 0.45rem 0;
-      line-height: 1.4;
-      font-size: clamp(0.95rem, 2.2vw, 1.1rem);
-      opacity: 0.95;
-    }
-
-    .sonuc {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-top: 0.7rem;
-    }
-
-    .sonuc strong {
-      color: var(--vurgu);
-    }
-
-    button {
-      margin-top: 0.8rem;
-      min-width: 10rem;
-      padding: 0.72rem 1rem;
-      border-radius: 0.82rem;
-      border: 2px solid rgba(112, 239, 255, 0.7);
-      background: rgba(0, 129, 255, 0.3);
-      color: var(--yazi);
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      cursor: pointer;
-    }
-
-    @media (max-width: 760px) {
-      #ziplamaAlani {
-        min-height: 4.6rem;
-      }
-    }
+    .input-zone { position: fixed; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 6; border: 1px dashed rgba(132, 230, 255, 0.38); border-radius: 12px; min-height: 58px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #caf4ff; background: rgba(3, 7, 18, 0.35); }
+    @media (min-width: 920px) { .input-zone { min-height: 48px; } }
   </style>
 </head>
 <body>
-  <canvas id="oyun" aria-label="Geometri temalı koşu oyunu"></canvas>
+  <canvas id="gameCanvas" aria-label="Neon rhythm platformer"></canvas>
 
-  <div id="ustBilgi">
-    <div id="skorYazi" class="rozet">Skor: 0</div>
-    <div id="rekorYazi" class="rozet">Rekor: 0</div>
+  <div class="hud">
+    <div id="scoreLabel" class="pill">Score: 0</div>
+    <div id="bestLabel" class="pill">Best: 0</div>
+    <div id="modeLabel" class="pill">Mode: Endless</div>
   </div>
 
-  <div id="ziplamaAlani" aria-label="Zıplama alanı">DOKUN / TIKLA / BOŞLUK → ZIPLA</div>
-
-  <div id="panel">
-    <div class="kart">
-      <h1 id="panelBaslik">Başla</h1>
-      <p id="panelMetin">Küp otomatik ilerler. Ritmi yakala, zıplamaları doğru zamanda yap.</p>
-      <div class="sonuc">
-        <p><strong>Skor:</strong> <span id="panelSkor">0</span></p>
-        <p><strong>Rekor:</strong> <span id="panelRekor">0</span></p>
-      </div>
-      <button id="baslatButon" type="button">Başla</button>
+  <div id="menu" class="menu">
+    <div class="card">
+      <h1 id="menuTitle">Neon Rhythm Dash</h1>
+      <p id="menuText">Tap to jump on beat. Precision hitboxes, fast restart, and rhythm-locked obstacle flow.</p>
+      <p>Last Score: <strong id="lastScore">0</strong> | Best: <strong id="menuBest">0</strong></p>
+      <button id="startBtn" class="btn">Start Run</button>
+      <p class="controls">Space / Click / Touch: Jump · P: Pause · H: Hitbox Debug · M: Mute</p>
     </div>
   </div>
+
+  <div id="inputZone" class="input-zone">TAP / CLICK / SPACE TO JUMP</div>
 
   <script>
     (() => {
       "use strict";
 
-      // ---------- DOM ----------
-      const canvas = document.getElementById("oyun");
-      const ctx = canvas.getContext("2d", { alpha: false });
-      const panel = document.getElementById("panel");
-      const panelBaslik = document.getElementById("panelBaslik");
-      const panelMetin = document.getElementById("panelMetin");
-      const panelSkor = document.getElementById("panelSkor");
-      const panelRekor = document.getElementById("panelRekor");
-      const skorYazi = document.getElementById("skorYazi");
-      const rekorYazi = document.getElementById("rekorYazi");
-      const baslatButon = document.getElementById("baslatButon");
-      const ziplamaAlani = document.getElementById("ziplamaAlani");
-
-      // ---------- Fizik / oyun ayarları ----------
-      const OYUNCU_BOYUT = 42;
-      const YERDEN_DUSME_PAYI = 140;
-      const GRAVITE = 2620; // Temel platformerlardan ~%11 daha güçlü his
-      const ZIPLAMA_DARBESI = -940;
-      const DT_TAVAN = 1 / 35;
-      const ZIPLAMA_BUFFER_MS = 115;
-      const SKOR_ARALIK_MS = 120;
-      const SKOR_BASINA_ARTIS = 4;
-      const BITIS_SKORU = 5000;
-      const REKOR_ANAHTAR = "tahta-dash-rekor";
-
-      // ---------- Durum ----------
-      let ekran = { w: 1280, h: 720, dpr: 1 };
-      let zeminY = 0;
-      let oyunDurumu = "bekle"; // bekle | oynaniyor | bitti | tamamlandi
-
-      let uzaklik = 0;
-      let skor = 0;
-      let skorSayaciMs = 0;
-      let sonKare = performance.now();
-      let sonZiplamaIstekZamani = -9999;
-      let rekor = Number(localStorage.getItem(REKOR_ANAHTAR) || 0);
-
-      const oyuncu = {
-        xEkran: 0,
-        y: 0,
-        oncekiY: 0,
-        vy: 0,
-        yerde: true,
-        donus: 0
-      };
-
-      const seviye = {
-        platformlar: [],
-        dikenler: []
-      };
-
-      function kisit(deger, min, max) {
-        return Math.max(min, Math.min(max, deger));
-      }
-
-      function yerlesimAyarla() {
-        ekran.dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-        ekran.w = window.innerWidth;
-        ekran.h = window.innerHeight;
-        canvas.width = Math.floor(ekran.w * ekran.dpr);
-        canvas.height = Math.floor(ekran.h * ekran.dpr);
-        ctx.setTransform(ekran.dpr, 0, 0, ekran.dpr, 0, 0);
-
-        zeminY = Math.floor(ekran.h * 0.77);
-        oyuncu.xEkran = Math.floor(ekran.w * 0.22);
-
-        seviyeUret();
-        if (oyunDurumu !== "oynaniyor") oyuncuyuYereKoy();
-      }
-
-      function hizHesapla() {
-        // Hız da skorla artar: başlangıçta ritmik, sonda daha sıkı.
-        return 320 + kisit(skor / BITIS_SKORU, 0, 1) * 80;
-      }
-
-      function patternEkle(x, zorluk) {
-        const tipler = ["tek", "cift", "uclu", "kume", "bosluk", "karma"];
-        const secimAgirlik = [
-          1.2 - zorluk * 0.8,
-          0.6 + zorluk * 0.35,
-          0.25 + zorluk * 0.4,
-          0.08 + zorluk * 0.35,
-          0.7 + zorluk * 0.45,
-          0.03 + zorluk * 0.45
-        ];
-
-        let toplam = 0;
-        for (const agirlik of secimAgirlik) toplam += agirlik;
-        let rastgele = Math.random() * toplam;
-        let tip = "tek";
-        for (let i = 0; i < tipler.length; i += 1) {
-          rastgele -= secimAgirlik[i];
-          if (rastgele <= 0) {
-            tip = tipler[i];
-            break;
-          }
-        }
-
-        const dikenW = 30;
-        const dikenH = 34 + zorluk * 7;
-        const tabanY = zeminY;
-
-        const platformEkle = (px, pw) => seviye.platformlar.push({ x: px, y: zeminY, w: pw, h: 34 });
-        const dikenEkle = (dx) => seviye.dikenler.push({ x: dx, y: tabanY - dikenH, w: dikenW, h: dikenH });
-
-        if (tip === "tek") {
-          platformEkle(x - 10, 130);
-          dikenEkle(x + 38);
-          return 240;
-        }
-
-        if (tip === "cift") {
-          platformEkle(x - 10, 150);
-          dikenEkle(x + 34);
-          dikenEkle(x + 68);
-          return 255 - zorluk * 15;
-        }
-
-        if (tip === "uclu") {
-          platformEkle(x - 8, 170);
-          dikenEkle(x + 30);
-          dikenEkle(x + 62);
-          dikenEkle(x + 94);
-          return 270 - zorluk * 25;
-        }
-
-        if (tip === "kume") {
-          platformEkle(x - 14, 210);
-          const adet = 4 + Math.round(zorluk * 2);
-          for (let i = 0; i < adet; i += 1) {
-            dikenEkle(x + 28 + i * 30);
-          }
-          return 305 - zorluk * 30;
-        }
-
-        if (tip === "bosluk") {
-          const genislik = 110 - zorluk * 35;
-          platformEkle(x - 12, 56);
-          platformEkle(x + 56 + genislik, 90);
-          return 270 - zorluk * 35;
-        }
-
-        // karma: gap + inişte spike
-        const gap = 95 - zorluk * 22;
-        platformEkle(x - 12, 62);
-        platformEkle(x + 64 + gap, 165);
-        dikenEkle(x + 96 + gap);
-        if (zorluk > 0.65) dikenEkle(x + 126 + gap);
-        return 290 - zorluk * 30;
-      }
-
-      function seviyeUret() {
-        seviye.platformlar.length = 0;
-        seviye.dikenler.length = 0;
-
-        // Kesintisiz taban (pixel-stable ana zemin)
-        seviye.platformlar.push({ x: -600, y: zeminY, w: 999999, h: 34 });
-
-        // Desenler: erken bölüm daha rahat, ileride daha sıkı.
-        const maxDunyaUzunluk = 36000;
-        let x = 560;
-
-        while (x < maxDunyaUzunluk) {
-          const oran = kisit(x / maxDunyaUzunluk, 0, 1);
-          const zorluk = Math.pow(oran, 0.8);
-          const sonraki = patternEkle(x, zorluk);
-          const spacing = kisit(sonraki + (1 - zorluk) * 50 + Math.random() * 34, 150, 360);
-          x += spacing;
-        }
-      }
-
-      function oyuncuyuYereKoy() {
-        oyuncu.y = zeminY - OYUNCU_BOYUT;
-        oyuncu.oncekiY = oyuncu.y;
-        oyuncu.vy = 0;
-        oyuncu.yerde = true;
-      }
-
-      function skorCiz() {
-        skorYazi.textContent = `Skor: ${Math.floor(skor)}`;
-        rekorYazi.textContent = `Rekor: ${Math.floor(rekor)}`;
-      }
-
-      function oyunuBitir(basariliTamamlama) {
-        oyunDurumu = basariliTamamlama ? "tamamlandi" : "bitti";
-        panel.classList.remove("oyunda");
-
-        if (Math.floor(skor) > rekor) {
-          rekor = Math.floor(skor);
-          localStorage.setItem(REKOR_ANAHTAR, String(rekor));
-        }
-
-        panelBaslik.textContent = basariliTamamlama ? "Oyun Bitti" : "Oyun Bitti";
-        panelMetin.textContent = basariliTamamlama
-          ? "Tebrikler! 5000 skora ulaştın ve bölümü tamamladın."
-          : "Engellere çarptın. Ritmi yakalayıp tekrar dene.";
-        baslatButon.textContent = "Tekrar Dene";
-        panelSkor.textContent = Math.floor(skor);
-        panelRekor.textContent = Math.floor(rekor);
-        skorCiz();
-      }
-
-      function oyunuBaslat() {
-        uzaklik = 0;
-        skor = 0;
-        skorSayaciMs = 0;
-        sonZiplamaIstekZamani = -9999;
-        oyuncu.donus = 0;
-        oyuncuyuYereKoy();
-        oyunDurumu = "oynaniyor";
-        panel.classList.add("oyunda");
-        skorCiz();
-      }
-
-      function atla(simdiMs) {
-        sonZiplamaIstekZamani = simdiMs;
-      }
-
-      function cerceveGuncelle(dt, simdiMs) {
-        const hiz = hizHesapla();
-        uzaklik += hiz * dt;
-
-        // Zıplama tamponu: yere değmeden az önce basılan inputu kaçırmaz.
-        const bufferAktif = simdiMs - sonZiplamaIstekZamani <= ZIPLAMA_BUFFER_MS;
-        if (bufferAktif && oyuncu.yerde) {
-          oyuncu.vy = ZIPLAMA_DARBESI;
-          oyuncu.yerde = false;
-          sonZiplamaIstekZamani = -9999;
-        }
-
-        oyuncu.oncekiY = oyuncu.y;
-        oyuncu.vy += GRAVITE * dt;
-        oyuncu.y += oyuncu.vy * dt;
-
-        const oyuncuDunyaX = uzaklik;
-        const kutu = {
-          x: oyuncuDunyaX - OYUNCU_BOYUT / 2,
-          y: oyuncu.y,
-          w: OYUNCU_BOYUT,
-          h: OYUNCU_BOYUT
-        };
-
-        oyuncu.yerde = false;
-        let inisY = Infinity;
-        for (const p of seviye.platformlar) {
-          const yatayTemas = kutu.x + kutu.w > p.x && kutu.x < p.x + p.w;
-          if (!yatayTemas) continue;
-
-          const onceAlt = oyuncu.oncekiY + OYUNCU_BOYUT;
-          const simdiAlt = oyuncu.y + OYUNCU_BOYUT;
-          if (onceAlt <= p.y && simdiAlt >= p.y && oyuncu.vy >= 0) {
-            inisY = Math.min(inisY, p.y - OYUNCU_BOYUT);
-          }
-        }
-
-        if (inisY !== Infinity) {
-          oyuncu.y = inisY;
-          oyuncu.vy = 0; // GD hissi: yere değince düşey hız sıfırlanır.
-          oyuncu.yerde = true;
-          oyuncu.donus = Math.round((oyuncu.donus / (Math.PI / 2))) * (Math.PI / 2);
-        } else {
-          oyuncu.donus += dt * 6.7;
-        }
-
-        if (oyuncu.y > ekran.h + YERDEN_DUSME_PAYI) {
-          oyunuBitir(false);
-          return;
-        }
-
-        for (const d of seviye.dikenler) {
-          const carpisti =
-            kutu.x < d.x + d.w &&
-            kutu.x + kutu.w > d.x &&
-            kutu.y < d.y + d.h &&
-            kutu.y + kutu.h > d.y;
-          if (carpisti) {
-            oyunuBitir(false);
-            return;
-          }
-        }
-
-        skorSayaciMs += dt * 1000;
-        while (skorSayaciMs >= SKOR_ARALIK_MS) {
-          skorSayaciMs -= SKOR_ARALIK_MS;
-          skor += SKOR_BASINA_ARTIS;
-          if (skor >= BITIS_SKORU) {
-            skor = BITIS_SKORU;
-            oyunuBitir(true);
-            return;
-          }
-        }
-      }
-
-      function dunyaXToEkranX(x) {
-        return x - uzaklik + oyuncu.xEkran;
-      }
-
-      function cizArkaPlan() {
-        ctx.fillStyle = "#080d18";
-        ctx.fillRect(0, 0, ekran.w, ekran.h);
-
-        const adim = 58;
-        ctx.strokeStyle = "rgba(112, 239, 255, 0.08)";
-        ctx.lineWidth = 1;
-        for (let x = -((uzaklik * 0.2) % adim); x < ekran.w; x += adim) {
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, ekran.h);
-          ctx.stroke();
-        }
-      }
-
-      function cizSeviye() {
-        ctx.fillStyle = "#2a4f8f";
-        ctx.strokeStyle = "#70efff";
-        ctx.lineWidth = 2;
-
-        for (const p of seviye.platformlar) {
-          const sx = dunyaXToEkranX(p.x);
-          if (sx + p.w < -120 || sx > ekran.w + 120) continue;
-          ctx.fillRect(sx, p.y, p.w, p.h);
-          ctx.strokeRect(sx + 0.5, p.y + 0.5, p.w - 1, p.h - 1);
-        }
-
-        ctx.fillStyle = "#ff5160";
-        for (const d of seviye.dikenler) {
-          const sx = dunyaXToEkranX(d.x);
-          if (sx + d.w < -80 || sx > ekran.w + 80) continue;
-          ctx.beginPath();
-          ctx.moveTo(sx, d.y + d.h);
-          ctx.lineTo(sx + d.w / 2, d.y);
-          ctx.lineTo(sx + d.w, d.y + d.h);
-          ctx.closePath();
-          ctx.fill();
-        }
-      }
-
-      function cizOyuncu() {
-        const x = oyuncu.xEkran - OYUNCU_BOYUT / 2;
-        const y = oyuncu.y;
-        ctx.save();
-        ctx.translate(x + OYUNCU_BOYUT / 2, y + OYUNCU_BOYUT / 2);
-        if (!oyuncu.yerde) ctx.rotate(oyuncu.donus);
-
-        const gr = ctx.createLinearGradient(-20, -20, 20, 20);
-        gr.addColorStop(0, "#6af5ff");
-        gr.addColorStop(1, "#0f8dff");
-        ctx.fillStyle = gr;
-        ctx.fillRect(-OYUNCU_BOYUT / 2, -OYUNCU_BOYUT / 2, OYUNCU_BOYUT, OYUNCU_BOYUT);
-
-        ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
-        ctx.fillRect(-10, -8, 6, 6);
-        ctx.fillRect(4, -8, 6, 6);
-        ctx.restore();
-      }
-
-      function dongu(simdiMs) {
-        const dt = Math.min(DT_TAVAN, (simdiMs - sonKare) / 1000);
-        sonKare = simdiMs;
-
-        cizArkaPlan();
-        if (oyunDurumu === "oynaniyor") {
-          cerceveGuncelle(dt, simdiMs);
-          skorCiz();
-        }
-        cizSeviye();
-        cizOyuncu();
-
-        requestAnimationFrame(dongu);
-      }
-
-      // Tüm girdiler aynı fonksiyona bağlanır: klavye / mouse / touch.
-      function girdiYakala(evt) {
-        evt.preventDefault();
-        if (oyunDurumu !== "oynaniyor") return;
-        atla(performance.now());
-      }
-
-      window.addEventListener(
-        "keydown",
-        (evt) => {
-          if (evt.code !== "Space") return;
-          girdiYakala(evt);
+      const CONFIG = {
+        baseWidth: 1280,
+        baseHeight: 720,
+        fixedDt: 1 / 120,
+        maxFrameDt: 0.05,
+        targetFps: 60,
+        inputBufferMs: 100,
+        world: {
+          gravity: 3000,
+          jumpForce: -1050,
+          groundHeight: 128,
+          startSpeed: 420,
+          maxSpeed: 880,
+          speedRamp: 5.4
         },
-        { passive: false }
-      );
+        player: {
+          size: 44,
+          hitboxScale: 0.78,
+          x: 250,
+          deathAnimMs: 180
+        },
+        level: {
+          chunkTiles: 24,
+          tileSize: 48,
+          spawnAheadPx: 2400,
+          cleanupBehindPx: 400
+        },
+        rhythm: {
+          bpm: 142,
+          subdivisionWeights: [1, 0.5, 0.25]
+        }
+      };
 
-      canvas.addEventListener("pointerdown", girdiYakala, { passive: false });
-      ziplamaAlani.addEventListener("pointerdown", girdiYakala, { passive: false });
+      class InputManager {
+        constructor() {
+          this.lastPressMs = -1e9;
+          this.pausedToggleRequested = false;
+          this.debugToggleRequested = false;
+          this.muteToggleRequested = false;
+        }
+        press(nowMs) { this.lastPressMs = nowMs; }
+        isBuffered(nowMs) { return nowMs - this.lastPressMs <= CONFIG.inputBufferMs; }
+        clearBuffer() { this.lastPressMs = -1e9; }
+      }
 
-      baslatButon.addEventListener("click", () => {
-        oyunuBaslat();
-      });
+      class Physics {
+        static integrateBody(body, dt) {
+          body.vy += CONFIG.world.gravity * dt;
+          body.y += body.vy * dt;
+        }
+      }
 
-      window.addEventListener("resize", yerlesimAyarla);
-      window.addEventListener("orientationchange", yerlesimAyarla);
-      window.addEventListener("contextmenu", (evt) => evt.preventDefault());
+      class CollisionSystem {
+        static aabb(a, b) {
+          return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+        }
 
-      yerlesimAyarla();
-      panelRekor.textContent = String(rekor);
-      skorCiz();
-      requestAnimationFrame((ilk) => {
-        sonKare = ilk;
-        requestAnimationFrame(dongu);
-      });
+        static triangleVsRect(tri, rect) {
+          if (!this.aabb(rect, tri.aabb)) return false;
+          const points = [
+            { x: rect.x, y: rect.y },
+            { x: rect.x + rect.w, y: rect.y },
+            { x: rect.x, y: rect.y + rect.h },
+            { x: rect.x + rect.w, y: rect.y + rect.h },
+            { x: rect.x + rect.w * 0.5, y: rect.y + rect.h }
+          ];
+          for (const p of points) if (this.pointInTriangle(p, tri.p1, tri.p2, tri.p3)) return true;
+          const rEdges = [
+            [points[0], points[1]], [points[1], points[3]], [points[3], points[2]], [points[2], points[0]]
+          ];
+          const tEdges = [[tri.p1, tri.p2], [tri.p2, tri.p3], [tri.p3, tri.p1]];
+          for (const re of rEdges) for (const te of tEdges) if (this.linesIntersect(re[0], re[1], te[0], te[1])) return true;
+          return false;
+        }
+
+        static pointInTriangle(p, a, b, c) {
+          const area = (v1, v2, v3) => (v1.x * (v2.y - v3.y) + v2.x * (v3.y - v1.y) + v3.x * (v1.y - v2.y));
+          const A = area(a, b, c);
+          const s = area(p, b, c) / A;
+          const t = area(a, p, c) / A;
+          const u = area(a, b, p) / A;
+          return s >= -0.0001 && t >= -0.0001 && u >= -0.0001;
+        }
+
+        static linesIntersect(a, b, c, d) {
+          const ccw = (p1, p2, p3) => (p3.y - p1.y) * (p2.x - p1.x) > (p2.y - p1.y) * (p3.x - p1.x);
+          return ccw(a, c, d) !== ccw(b, c, d) && ccw(a, b, c) !== ccw(a, b, d);
+        }
+      }
+
+      class Obstacle {
+        constructor() { this.active = false; this.type = "block"; this.x = 0; this.y = 0; this.w = 0; this.h = 0; }
+        setup(type, x, y, w, h) { this.active = true; this.type = type; this.x = x; this.y = y; this.w = w; this.h = h; return this; }
+        getAABB() { return { x: this.x, y: this.y, w: this.w, h: this.h }; }
+        getTriangle() {
+          const p1 = { x: this.x, y: this.y + this.h };
+          const p2 = { x: this.x + this.w * 0.5, y: this.y };
+          const p3 = { x: this.x + this.w, y: this.y + this.h };
+          return { p1, p2, p3, aabb: { x: this.x, y: this.y, w: this.w, h: this.h } };
+        }
+      }
+
+      class ObstaclePool {
+        constructor(size = 220) {
+          this.pool = Array.from({ length: size }, () => new Obstacle());
+          this.active = [];
+        }
+        acquire(type, x, y, w, h) {
+          const item = this.pool.length ? this.pool.pop() : new Obstacle();
+          this.active.push(item.setup(type, x, y, w, h));
+          return item;
+        }
+        releaseAt(index) {
+          const o = this.active[index];
+          o.active = false;
+          this.pool.push(o);
+          this.active[index] = this.active[this.active.length - 1];
+          this.active.pop();
+        }
+        reset() {
+          for (let i = this.active.length - 1; i >= 0; i--) this.releaseAt(i);
+        }
+      }
+
+      class Player {
+        constructor(groundY) {
+          this.size = CONFIG.player.size;
+          this.hitboxScale = CONFIG.player.hitboxScale;
+          this.x = CONFIG.player.x;
+          this.y = groundY - this.size;
+          this.vy = 0;
+          this.alive = true;
+          this.deathT = 0;
+          this.rotation = 0;
+          this.pulse = 0;
+        }
+        reset(groundY) {
+          this.y = groundY - this.size;
+          this.vy = 0;
+          this.alive = true;
+          this.deathT = 0;
+          this.rotation = 0;
+          this.pulse = 0;
+        }
+        getHitbox() {
+          const m = (1 - this.hitboxScale) * 0.5 * this.size;
+          return { x: this.x + m, y: this.y + m, w: this.size * this.hitboxScale, h: this.size * this.hitboxScale };
+        }
+      }
+
+      class AudioManager {
+        constructor() {
+          this.ctx = null;
+          this.master = null;
+          this.bpm = CONFIG.rhythm.bpm;
+          this.beatInterval = 60 / this.bpm;
+          this.nextBeatTime = 0;
+          this.started = false;
+          this.enabled = true;
+        }
+        ensureContext() {
+          if (this.ctx) return;
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          this.master = this.ctx.createGain();
+          this.master.gain.value = 0.28;
+          this.master.connect(this.ctx.destination);
+        }
+        start() {
+          this.ensureContext();
+          if (this.ctx.state === "suspended") this.ctx.resume();
+          this.nextBeatTime = this.ctx.currentTime + 0.05;
+          this.started = true;
+        }
+        setMuted(muted) {
+          this.enabled = !muted;
+          if (this.master) this.master.gain.value = muted ? 0 : 0.28;
+        }
+        tick() {
+          if (!this.started || !this.enabled) return false;
+          let beatHit = false;
+          while (this.nextBeatTime < this.ctx.currentTime + 0.12) {
+            this.scheduleBeat(this.nextBeatTime);
+            this.nextBeatTime += this.beatInterval;
+            beatHit = true;
+          }
+          return beatHit;
+        }
+        scheduleBeat(time) {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(170, time);
+          osc.frequency.exponentialRampToValueAtTime(240, time + 0.045);
+          gain.gain.setValueAtTime(0.0001, time);
+          gain.gain.exponentialRampToValueAtTime(0.08, time + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.08);
+          osc.connect(gain);
+          gain.connect(this.master);
+          osc.start(time);
+          osc.stop(time + 0.09);
+        }
+      }
+
+      class LevelManager {
+        constructor(pool, getGroundY) {
+          this.pool = pool;
+          this.getGroundY = getGroundY;
+          this.mode = "endless";
+          this.worldX = 0;
+          this.lastSpawnX = 0;
+          this.distance = 0;
+          this.spikeStreak = 0;
+          this.patterns = this.buildPatterns();
+          this.prebuilt = [];
+        }
+        buildPatterns() {
+          return [
+            ["_", "s", "_", "_", "b", "_", "s", "_"],
+            ["_", "s", "s", "_", "_", "b", "_", "_"],
+            ["_", "b", "_", "s", "_", "s", "_", "_"],
+            ["_", "s", "_", "b", "_", "_", "s", "_"],
+            ["_", "q", "_", "_", "s", "_", "q", "_"],
+            ["_", "s", "s", "s", "_", "_", "b", "_"],
+            ["_", "_", "b", "_", "s", "_", "s", "_"],
+            ["_", "s", "_", "s", "_", "b", "_", "_"]
+          ];
+        }
+        reset() {
+          this.worldX = 0;
+          this.lastSpawnX = 0;
+          this.distance = 0;
+          this.spikeStreak = 0;
+          this.pool.reset();
+        }
+        setMode(mode) { this.mode = mode; }
+        update(dt, scrollSpeed, beatInterval) {
+          this.worldX += scrollSpeed * dt;
+          this.distance = this.worldX;
+          const aheadTarget = this.worldX + CONFIG.level.spawnAheadPx;
+          while (this.lastSpawnX < aheadTarget) {
+            this.spawnSegment(scrollSpeed, beatInterval);
+          }
+          const removeBefore = this.worldX - CONFIG.level.cleanupBehindPx;
+          for (let i = this.pool.active.length - 1; i >= 0; i--) {
+            if (this.pool.active[i].x + this.pool.active[i].w < removeBefore) this.pool.releaseAt(i);
+          }
+        }
+        spawnSegment(scrollSpeed, beatInterval) {
+          const tile = CONFIG.level.tileSize;
+          const groundY = this.getGroundY();
+          const beatTiles = Math.max(1, Math.round((scrollSpeed * beatInterval) / tile));
+          const pattern = this.mode === "prebuilt" && this.prebuilt.length ? this.prebuilt[(this.lastSpawnX / tile) % this.prebuilt.length | 0] : this.patterns[(Math.random() * this.patterns.length) | 0];
+          for (let i = 0; i < pattern.length; i++) {
+            const symbol = pattern[i];
+            const x = this.lastSpawnX + i * tile * beatTiles;
+            if (symbol === "s") {
+              if (this.spikeStreak >= 4) continue;
+              this.pool.acquire("spike", x, groundY - tile, tile, tile);
+              this.spikeStreak++;
+            } else if (symbol === "b") {
+              this.pool.acquire("block", x, groundY - tile * 1.2, tile, tile * 1.2);
+              this.spikeStreak = 0;
+            } else if (symbol === "q") {
+              this.pool.acquire("spike", x, groundY - tile * 0.5, tile * 0.5, tile * 0.5);
+              this.spikeStreak = Math.min(4, this.spikeStreak + 1);
+            } else {
+              this.spikeStreak = 0;
+            }
+          }
+          this.lastSpawnX += pattern.length * tile * beatTiles;
+        }
+      }
+
+      class UIManager {
+        constructor() {
+          this.menu = document.getElementById("menu");
+          this.menuTitle = document.getElementById("menuTitle");
+          this.menuText = document.getElementById("menuText");
+          this.startBtn = document.getElementById("startBtn");
+          this.lastScore = document.getElementById("lastScore");
+          this.menuBest = document.getElementById("menuBest");
+          this.scoreLabel = document.getElementById("scoreLabel");
+          this.bestLabel = document.getElementById("bestLabel");
+          this.modeLabel = document.getElementById("modeLabel");
+        }
+        showMenu(title, text, score, best) {
+          this.menu.classList.remove("hidden");
+          this.menuTitle.textContent = title;
+          this.menuText.textContent = text;
+          this.lastScore.textContent = score;
+          this.menuBest.textContent = best;
+        }
+        hideMenu() { this.menu.classList.add("hidden"); }
+        updateHud(score, best, mode, paused) {
+          this.scoreLabel.textContent = `Score: ${score | 0}`;
+          this.bestLabel.textContent = `Best: ${best | 0}`;
+          this.modeLabel.textContent = paused ? "Mode: Paused" : `Mode: ${mode === "endless" ? "Endless" : "Prebuilt"}`;
+        }
+      }
+
+      class Game {
+        constructor() {
+          this.canvas = document.getElementById("gameCanvas");
+          this.ctx = this.canvas.getContext("2d", { alpha: false });
+          this.inputZone = document.getElementById("inputZone");
+          this.input = new InputManager();
+          this.audio = new AudioManager();
+          this.ui = new UIManager();
+          this.pool = new ObstaclePool();
+          this.pixelPerfect = false;
+          this.debugHitbox = false;
+          this.state = "menu";
+          this.best = +(localStorage.getItem("neon-rhythm-best") || 0);
+          this.score = 0;
+          this.acc = 0;
+          this.lastTs = performance.now();
+          this.scale = 1;
+          this.w = CONFIG.baseWidth;
+          this.h = CONFIG.baseHeight;
+          this.groundY = this.h - CONFIG.world.groundHeight;
+          this.player = new Player(this.groundY);
+          this.level = new LevelManager(this.pool, () => this.groundY);
+          this.scrollSpeed = CONFIG.world.startSpeed;
+          this.beatPulse = 0;
+          this.parallax = [0, 0, 0];
+          this.bindEvents();
+          this.resize();
+          this.ui.updateHud(0, this.best, this.level.mode, false);
+          this.ui.showMenu("Neon Rhythm Dash", "A polished rhythm platformer in one HTML file. Press Start.", 0, this.best);
+          requestAnimationFrame(this.frame.bind(this));
+        }
+
+        bindEvents() {
+          addEventListener("resize", () => this.resize());
+          const press = () => this.input.press(performance.now());
+          addEventListener("keydown", e => {
+            if (e.code === "Space") { e.preventDefault(); press(); }
+            if (e.code === "KeyP") this.input.pausedToggleRequested = true;
+            if (e.code === "KeyH") this.input.debugToggleRequested = true;
+            if (e.code === "KeyM") this.input.muteToggleRequested = true;
+            if (e.code === "KeyE") this.level.setMode(this.level.mode === "endless" ? "prebuilt" : "endless");
+          });
+          this.canvas.addEventListener("pointerdown", press, { passive: true });
+          this.inputZone.addEventListener("pointerdown", press, { passive: true });
+          document.getElementById("startBtn").addEventListener("click", () => this.start());
+        }
+
+        resize() {
+          const dpr = Math.min(2, devicePixelRatio || 1);
+          const sw = innerWidth;
+          const sh = innerHeight;
+          const scale = Math.min(sw / CONFIG.baseWidth, sh / CONFIG.baseHeight);
+          this.scale = scale;
+          this.w = Math.round(CONFIG.baseWidth * scale);
+          this.h = Math.round(CONFIG.baseHeight * scale);
+          this.canvas.width = Math.round(this.w * dpr);
+          this.canvas.height = Math.round(this.h * dpr);
+          this.canvas.style.width = `${this.w}px`;
+          this.canvas.style.height = `${this.h}px`;
+          this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          this.groundY = this.h - CONFIG.world.groundHeight * scale;
+          this.player.x = CONFIG.player.x * scale;
+          this.player.size = CONFIG.player.size * scale;
+          this.player.hitboxScale = CONFIG.player.hitboxScale;
+          this.player.y = this.groundY - this.player.size;
+        }
+
+        start() {
+          this.audio.start();
+          this.state = "running";
+          this.score = 0;
+          this.scrollSpeed = CONFIG.world.startSpeed * this.scale;
+          this.level.reset();
+          this.player.reset(this.groundY);
+          this.ui.hideMenu();
+          this.lastTs = performance.now();
+        }
+
+        restart() {
+          this.state = "running";
+          this.score = 0;
+          this.scrollSpeed = CONFIG.world.startSpeed * this.scale;
+          this.level.reset();
+          this.player.reset(this.groundY);
+        }
+
+        die() {
+          if (!this.player.alive) return;
+          this.player.alive = false;
+          this.player.deathT = CONFIG.player.deathAnimMs;
+          if (this.score > this.best) {
+            this.best = this.score | 0;
+            localStorage.setItem("neon-rhythm-best", String(this.best));
+          }
+        }
+
+        update(dt, nowMs) {
+          if (this.input.pausedToggleRequested) {
+            this.input.pausedToggleRequested = false;
+            if (this.state === "running") this.state = "paused";
+            else if (this.state === "paused") this.state = "running";
+          }
+          if (this.input.debugToggleRequested) { this.input.debugToggleRequested = false; this.debugHitbox = !this.debugHitbox; }
+          if (this.input.muteToggleRequested) { this.input.muteToggleRequested = false; this.audio.setMuted(this.audio.enabled); }
+
+          if (this.state !== "running") return;
+
+          this.audio.tick();
+          const beatInterval = this.audio.beatInterval;
+          this.beatPulse = Math.max(0, this.beatPulse - dt * 2.5);
+
+          this.scrollSpeed = Math.min(CONFIG.world.maxSpeed * this.scale, this.scrollSpeed + CONFIG.world.speedRamp * this.scale * dt);
+          this.level.update(dt, this.scrollSpeed, beatInterval);
+          this.score = this.level.distance * 0.05;
+
+          const onGround = this.player.y + this.player.size >= this.groundY - 0.01;
+          if (onGround) {
+            this.player.y = this.groundY - this.player.size;
+            this.player.vy = Math.max(0, this.player.vy);
+            if (this.input.isBuffered(nowMs)) {
+              this.player.vy = CONFIG.world.jumpForce * this.scale;
+              this.input.clearBuffer();
+              this.beatPulse = 1;
+            }
+          }
+
+          Physics.integrateBody(this.player, dt);
+          if (this.player.y + this.player.size >= this.groundY) {
+            this.player.y = this.groundY - this.player.size;
+            if (this.player.vy > 0) this.player.vy = 0;
+          }
+          this.player.rotation += (this.player.vy !== 0 ? 5.3 : 2.4) * dt;
+
+          const hb = this.player.getHitbox();
+          for (let i = 0; i < this.pool.active.length; i++) {
+            const o = this.pool.active[i];
+            if (o.x > this.level.worldX + this.w + 60 || o.x + o.w < this.level.worldX - 50) continue;
+            const hit = o.type === "spike" ? CollisionSystem.triangleVsRect(o.getTriangle(), hb) : CollisionSystem.aabb(hb, o.getAABB());
+            if (hit) { this.die(); break; }
+          }
+
+          if (!this.player.alive) {
+            this.player.deathT -= dt * 1000;
+            if (this.player.deathT <= 0) {
+              this.state = "menu";
+              this.ui.showMenu("Run Failed", "Instant soft reset enabled. Press Start to run again.", this.score | 0, this.best);
+            }
+          }
+
+          this.parallax[0] += this.scrollSpeed * dt * 0.14;
+          this.parallax[1] += this.scrollSpeed * dt * 0.28;
+          this.parallax[2] += this.scrollSpeed * dt * 0.45;
+        }
+
+        drawBackground() {
+          const c = this.ctx;
+          c.fillStyle = "#070d1d";
+          c.fillRect(0, 0, this.w, this.h);
+          const pulse = this.beatPulse * 0.25;
+          c.fillStyle = `rgba(${20 + pulse * 130}, ${35 + pulse * 100}, ${75 + pulse * 100}, 1)`;
+          c.fillRect(0, 0, this.w, this.h);
+
+          for (let layer = 0; layer < 3; layer++) {
+            const speed = 0.25 + layer * 0.2;
+            const size = (80 + layer * 35) * this.scale;
+            const y = this.h * (0.25 + layer * 0.19);
+            const offset = -(this.parallax[layer] * speed % size);
+            this.ctx.fillStyle = `rgba(80,190,255,${0.07 + layer * 0.05})`;
+            for (let x = offset; x < this.w + size; x += size) this.ctx.fillRect(x, y, size * 0.55, 2 + layer);
+          }
+
+          const gy = this.groundY;
+          c.fillStyle = "#0d1732";
+          c.fillRect(0, gy, this.w, this.h - gy);
+          c.fillStyle = "rgba(120,220,255,0.4)";
+          c.fillRect(0, gy - 2, this.w, 2);
+        }
+
+        drawObstacles() {
+          const c = this.ctx;
+          const camX = this.level.worldX;
+          for (let i = 0; i < this.pool.active.length; i++) {
+            const o = this.pool.active[i];
+            const sx = o.x - camX;
+            if (sx + o.w < -5 || sx > this.w + 5) continue;
+            c.shadowBlur = 12;
+            c.shadowColor = "rgba(110,210,255,0.55)";
+            if (o.type === "spike") {
+              c.fillStyle = "#6ae2ff";
+              c.beginPath();
+              c.moveTo(sx, o.y + o.h);
+              c.lineTo(sx + o.w * 0.5, o.y);
+              c.lineTo(sx + o.w, o.y + o.h);
+              c.closePath();
+              c.fill();
+            } else {
+              c.fillStyle = "#63bcff";
+              c.fillRect(sx, o.y, o.w, o.h);
+            }
+            c.shadowBlur = 0;
+            if (this.debugHitbox) {
+              c.strokeStyle = "#ff4477";
+              c.lineWidth = 1;
+              c.strokeRect(sx, o.y, o.w, o.h);
+            }
+          }
+        }
+
+        drawPlayer() {
+          const c = this.ctx;
+          const p = this.player;
+          c.save();
+          c.translate(p.x + p.size * 0.5, p.y + p.size * 0.5);
+          c.rotate(p.rotation);
+          c.shadowBlur = 18;
+          c.shadowColor = "rgba(130,245,255,0.8)";
+          c.fillStyle = p.alive ? "#a2f7ff" : "#ff5f8c";
+          c.fillRect(-p.size * 0.5, -p.size * 0.5, p.size, p.size);
+          c.shadowBlur = 0;
+          c.restore();
+
+          if (this.debugHitbox) {
+            const hb = p.getHitbox();
+            c.strokeStyle = "#7aff3a";
+            c.strokeRect(hb.x, hb.y, hb.w, hb.h);
+          }
+        }
+
+        render() {
+          this.drawBackground();
+          this.drawObstacles();
+          this.drawPlayer();
+          if (this.state === "paused") {
+            this.ctx.fillStyle = "rgba(0,0,0,0.35)";
+            this.ctx.fillRect(0, 0, this.w, this.h);
+            this.ctx.fillStyle = "#ddf8ff";
+            this.ctx.font = `700 ${34 * this.scale}px Inter, sans-serif`;
+            this.ctx.fillText("PAUSED", this.w * 0.5 - 70 * this.scale, this.h * 0.5);
+          }
+          this.ui.updateHud(this.score, this.best, this.level.mode, this.state === "paused");
+        }
+
+        frame(ts) {
+          const dt = Math.min(CONFIG.maxFrameDt, (ts - this.lastTs) / 1000);
+          this.lastTs = ts;
+          this.acc += dt;
+          while (this.acc >= CONFIG.fixedDt) {
+            this.update(CONFIG.fixedDt, ts);
+            this.acc -= CONFIG.fixedDt;
+          }
+          this.render();
+          requestAnimationFrame(this.frame.bind(this));
+        }
+      }
+
+      new Game();
     })();
   </script>
 </body>
